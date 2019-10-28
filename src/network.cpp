@@ -128,3 +128,86 @@ void Network::print_traj(const int time, const std::map<std::string, size_t> &_n
             }
     (*_out) << std::endl;
 }
+
+std::vector<std::pair<size_t, double> > Network::neighbors(const size_t& i) const
+{
+	std::vector<std::pair<size_t, double> > connections;
+	std::pair<size_t, double> incoming;
+	
+	//for (std::map<std::pair<size_t, size_t>, double>::const_iterator it=links.cbegin(); it!= links.cend(); ++it) 
+	/*{
+		//???donc on doit pas tester si le neuron connecté est inhib ou pas ? slides: - si inhib + si excit
+		//intesités deja negatives?
+		if ((it->first).first == i) /*and (((it->first).second).is_inhibitory()))
+		{
+				incoming = std::make_pair (((it->first).second), it->second);
+				connections.push_back (incoming);
+		}
+	}*/
+	for (std::map<std::pair<size_t, size_t>, double>::const_iterator it=links.lower_bound({i, 0}); it!= links.cend() and (it->first).first == i; ++it) 
+	{
+		connections.push_back ({(it->first).second, it->second});
+		
+	}
+	return connections;
+}
+
+std::pair<size_t, double> Network::degree(const size_t& i) const
+{
+	std::vector<std::pair<size_t, double> > connected (neighbors(i));
+	double tot_intensity (0);
+	for (size_t j(0); j < connected.size(); ++j) 
+	{
+		tot_intensity += connected[j].second;		
+	}
+
+	return {connected.size(),tot_intensity} ;	
+}
+
+std::set<size_t> Network::step(const std::vector<double>& vec)
+{
+	std::set<size_t> firing_n;
+	
+	for (size_t j(0); j < neurons.size() ; ++j)
+	{
+		if (neurons[j].firing())
+		{
+			firing_n.insert(j);
+			neurons[j].reset();
+		}
+	}
+	
+	for (size_t i(0); i < neurons.size() ; ++i) 
+	{
+		double current (vec[i]) ;
+		if(neurons[i].is_inhibitory())
+		{
+			// 0.4 OR 2??
+			current *= 0.4;
+		} else 
+		{
+			// 1.0 OR 5??
+			current *= 1.0;
+		}
+		
+		
+		std::vector<std::pair<size_t, double> > connected (neighbors(i));
+		for (size_t k(0); k < connected.size(); ++k) 
+		{
+			if (neurons[(connected[k].first)].firing())
+			{
+				current += connected[k].second;
+			}
+		}
+		
+		neurons[i].input(current);
+		neurons[i].step();
+		/*if (neurons[i].firing())
+		{
+			firing_n.insert(i);
+			neurons[i].reset();
+		}	*/		
+	}
+	return firing_n;
+}
+	
