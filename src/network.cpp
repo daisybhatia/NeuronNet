@@ -189,6 +189,7 @@ std::set<size_t> Network::step(const std::vector<double>& vec)
 		neurons[i].step();
 		
 	}
+	
 	return firing_n;
 }
 	
