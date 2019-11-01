@@ -144,9 +144,9 @@ std::pair<size_t, double> Network::degree(const size_t& i) const
 {
 	std::vector<std::pair<size_t, double> > connected (neighbors(i));
 	double tot_intensity (0);
-	for (size_t j(0); j < connected.size(); ++j) 
+	for (auto j : connected)
 	{
-		tot_intensity += connected[j].second;		
+		tot_intensity += j.second;
 	}
 
 	return {connected.size(),tot_intensity} ;	
@@ -179,10 +179,15 @@ std::set<size_t> Network::step(const std::vector<double>& vec)
 		std::vector<std::pair<size_t, double> > connected (neighbors(i));
 		for (size_t k(0); k < connected.size(); ++k) 
 		{
-			if (neurons[(connected[k].first)].firing())
+			if (neurons[(connected[k].first)].firing() and (neurons[(connected[k].first)].is_inhibitory()))
 			{
 				current += connected[k].second;
 			}
+			if (neurons[(connected[k].first)].firing() and (not(neurons[(connected[k].first)].is_inhibitory())))
+			{
+				current += (0.5*connected[k].second);
+			}
+			
 		}
 		
 		neurons[i].input(current);
